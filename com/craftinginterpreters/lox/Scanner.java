@@ -349,12 +349,13 @@ class Scanner {
     advance();
     advance();
 
+    /* In the case of a COMMENT, the compiler just ignores this item, not added as a token  */
     // Trim the surrounding quotes.
-    // unlike string() we have to trim for TWO characters 
-    String value = source.substring(start + 2, current - 2);
+    // // unlike string() we have to trim for TWO characters 
+    // String value = source.substring(start + 2, current - 2);
 
-    // since the str ends with */ and we're currently at *, we need to keep going 1 space
-    addToken(C_COMMENT, value);
+    // // since the str ends with */ and we're currently at *, we need to keep going 1 space
+    // addToken(C_COMMENT, value);
   }
 
 }
