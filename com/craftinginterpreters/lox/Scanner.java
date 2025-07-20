@@ -322,7 +322,7 @@ class Scanner {
     keywords.put("while",  WHILE);
   }
 
-  // challenge: c-style comment, based on string()
+  // challenge: c-style comment, based on string(), does not support nesting!
   private void cStyleComment() {
 
     // since we're at * when we start, increment ptr
@@ -345,14 +345,16 @@ class Scanner {
     } 
 
     // The closing ".
+    // unlike string, we MUST advance TWICE. The last clause already handles error checking here
+    advance();
     advance();
 
     // Trim the surrounding quotes.
-    String value = source.substring(start + 1, current - 1);
+    // unlike string() we have to trim for TWO characters 
+    String value = source.substring(start + 2, current - 2);
 
     // since the str ends with */ and we're currently at *, we need to keep going 1 space
-
-    addToken(STRING, value);
+    addToken(C_COMMENT, value);
   }
 
 }
