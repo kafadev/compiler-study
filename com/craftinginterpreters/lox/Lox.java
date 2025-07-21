@@ -8,10 +8,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Scanner;
 
 public class Lox {
-  
+
   // add bool to store if error occured
   static boolean hadError = false;
 
@@ -19,7 +18,7 @@ public class Lox {
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
-      System.exit(64); 
+      System.exit(64);
     } else if (args.length == 1) {
       runFile(args[0]);
     } else {
@@ -27,13 +26,14 @@ public class Lox {
     }
   }
 
-  // function to take in a path, read all the bytes, convert it to a string, and run it
+  // function to take in a path, read all the bytes, convert it to a string, and
+  // run it
   private static void runFile(String path) throws IOException {
     byte[] bytes = Files.readAllBytes(Paths.get(path));
     run(new String(bytes, Charset.defaultCharset()));
 
     if (hadError) {
-        System.exit(65); // exit program with code 65 if error'd
+      System.exit(65); // exit program with code 65 if error'd
     }
   }
 
@@ -45,7 +45,7 @@ public class Lox {
     BufferedReader reader = new BufferedReader(input);
 
     // run file with code indefinitely until there are no more lines (hence null)
-    for (;;) { 
+    for (;;) {
 
       // print > in a terminal-esque fashion
       System.out.print("> ");
@@ -54,40 +54,55 @@ public class Lox {
       String line = reader.readLine();
 
       // end if the line is not valid
-      if (line == null) break;
+      if (line == null)
+        break;
 
       // run each line
       run(line);
-      hadError = false; // no error occurred here. 
+      hadError = false; // no error occurred here.
 
-      /* Learning: code that reports error is separated from generation of error  */
+      /* Learning: code that reports error is separated from generation of error */
     }
   }
 
-
-  // utilize Java's builtin scanner class to read each line 
+  // utilize Java's builtin scanner class to read each line
   // assume that source is the final path
   private static void run(String source) {
+    // Scanner scanner = new Scanner(source);
+    // List<Token> tokens = scanner.scanTokens();
+
+    // // don't do anything with the tokens, but print.
+    // for (Token token : tokens) {
+    //   System.out.println(token);
+    // }
+
+    // comment out earlier code in favor for temporary testing 
+    // see 6.4
     Scanner scanner = new Scanner(source);
     List<Token> tokens = scanner.scanTokens();
 
-    // don't do anything with the tokens, but print. 
-    for (Token token : tokens) {
-        System.out.println(token);
-    }
+    Parser parser = new Parser(tokens);
+    Expr expression = parser.parse();
+
+    // Stop if there was a syntax error.
+    if (hadError) return;
+
+    System.out.println(new AstPrinter().print(expression));
+
   }
 
   /* 4.1.1 Error handling */
 
-  // why does this exist? 
-  /* 
-   * Users need to be able to check where their errors occur. 
-   * Users need to know what works and what fails internally 
+  // why does this exist?
+  /*
+   * Users need to be able to check where their errors occur.
+   * Users need to know what works and what fails internally
    * 
-   * In our case, reporting exists in this class to satisfy some hadError bool defined above. 
+   * In our case, reporting exists in this class to satisfy some hadError bool
+   * defined above.
    * 
    */
-  
+
   // create function to display an error message at some int line #
   static void error(int line, String message) {
     report(line, "", message);
@@ -99,7 +114,8 @@ public class Lox {
     System.err.println("[line " + line + "] Error" + where + ": " + message);
   }
 
-  /* 4.2 Lexemes and Tokens 
+  /*
+   * 4.2 Lexemes and Tokens
    * var language = "lox";
    * 
    * [var] [language] [=] ["lox"] [;]
@@ -107,4 +123,16 @@ public class Lox {
    * 
    * each [] is a lexeme
    */
+
+  /* 6.3.2: More error handling */
+
+  // given a token and a message, report a particular error message
+  static void error(Token token, String message) {
+    if (token.type == TokenType.EOF) {
+      report(token.line, " at end", message);
+    } else {
+      report(token.line, " at '" + token.lexeme + "'", message);
+    }
+  }
+
 }
