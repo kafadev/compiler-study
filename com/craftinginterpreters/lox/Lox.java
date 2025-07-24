@@ -93,7 +93,8 @@ public class Lox {
     List<Token> tokens = scanner.scanTokens();
 
     Parser parser = new Parser(tokens);
-    Expr expression = parser.parse();
+    //Expr expression = parser.parse();
+    List<Stmt> statements = parser.parse(); // introduced 8.1
 
     // Stop if there was a syntax error.
     if (hadError) return;
@@ -102,7 +103,7 @@ public class Lox {
     // as of 7.4 we have a working intepreter, so  call that instead 
     //System.out.println(new AstPrinter().print(expression));
 
-    interpreter.interpret(expression);
+    interpreter.interpret(statements);
 
   }
 
