@@ -1,4 +1,9 @@
-// This file is taken directly from Chapter 4 of the Crafting Interpreters Textbook
+// This file is taken directly from Chapter 4 of the Crafting Interpreters Textbook ++ later parts
+/* Class features:
+ * Main error reporting functions
+ * main() function & a starting point that ties the program together 
+ * methods to call interpreter / compiling processes
+ */
 package com.craftinginterpreters.lox;
 
 import java.io.BufferedReader;
@@ -13,6 +18,8 @@ public class Lox {
 
   // add bool to store if error occured
   static boolean hadError = false;
+  static boolean hadRuntimeError = false;
+  private static final Interpreter interpreter = new Interpreter();
 
   // main function
   public static void main(String[] args) throws IOException {
@@ -34,6 +41,10 @@ public class Lox {
 
     if (hadError) {
       System.exit(65); // exit program with code 65 if error'd
+    }
+    if (hadRuntimeError) 
+    {
+      System.exit(70);
     }
   }
 
@@ -87,7 +98,11 @@ public class Lox {
     // Stop if there was a syntax error.
     if (hadError) return;
 
-    System.out.println(new AstPrinter().print(expression));
+    // this line simply prints out our AST
+    // as of 7.4 we have a working intepreter, so  call that instead 
+    //System.out.println(new AstPrinter().print(expression));
+
+    interpreter.interpret(expression);
 
   }
 
@@ -133,6 +148,12 @@ public class Lox {
     } else {
       report(token.line, " at '" + token.lexeme + "'", message);
     }
+  }
+
+  static void runtimeError(RuntimeError error) {
+    System.err.println(error.getMessage() +
+        "\n[line " + error.token.line + "]");
+    hadRuntimeError = true;
   }
 
 }

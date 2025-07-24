@@ -19,6 +19,7 @@ public class Interpreter implements Expr.Visitor<Object> {
 
     switch (expr.operator.type) {
       case MINUS:
+        checkNumberOperand(expr.operator, right); // checker to see if we can actually do our operation
         return -(double)right;
       case BANG:
         return !isTruthy(right);
@@ -27,6 +28,33 @@ public class Interpreter implements Expr.Visitor<Object> {
     // Unreachable.
     return null;
   }
+
+  // error checker for if operator is put in a mistaken manner
+  // triggers runtime error
+  private void checkNumberOperand(Token operator, Object operand) {
+    
+    // if item is a double, all good
+    if (operand instanceof Double) {
+      return;
+    }
+
+    // otherwise, throw an error.
+    throw new RuntimeError(operator, "Operand must be a number.");
+  }
+
+  // another error checker
+  private void checkNumberOperands(Token operator,
+                                   Object left, 
+                                   Object right) {
+    // if the left and the right are doubles, we're all good.                                
+    if (left instanceof Double && right instanceof Double) {
+      return;
+    }
+    
+    // if not, throw error!
+    throw new RuntimeError(operator, "Operands must be numbers.");
+  }
+
 
   /* Visit a grouping expression [parenthesis], run evaluate() to simplify further */
   @Override
@@ -50,10 +78,13 @@ public class Interpreter implements Expr.Visitor<Object> {
     // handle what to do based on the type
     switch (expr.operator.type) {
       case MINUS:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left - (double)right;
       case SLASH:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left / (double)right;
       case STAR:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left * (double)right;
 
       // special case for PLUS to enable functionality of both 
@@ -62,18 +93,34 @@ public class Interpreter implements Expr.Visitor<Object> {
         if (left instanceof Double && right instanceof Double) {
             return (double) left + (double) right;
         }
-        if (left instanceof String && right instanceof String) {
+        else if (left instanceof String && right instanceof String) {
             return (String) left + (String) right;
         }
 
+        // implement challenge 2 in chapter 7
+        else if (left instanceof String && right instanceof Double) {
+            return (String) left + right.toString();
+        }
+        else if (left instanceof Double && right instanceof String) {
+            return left.toString() + (String) right;
+        }
+
+        // if the addition items are wrong, just toss an error
+        throw new RuntimeError(expr.operator,
+            "Operands must be two numbers or two strings.");
+
       // comparison cases
       case GREATER:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left > (double)right;
       case GREATER_EQUAL:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left >= (double)right;
       case LESS:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left < (double)right;
       case LESS_EQUAL:
+        checkNumberOperands(expr.operator, left, right);
         return (double)left <= (double)right;
 
       // brute equality
@@ -112,6 +159,42 @@ public class Interpreter implements Expr.Visitor<Object> {
 
     return a.equals(b);
   }
+
+  /* Actually run the interpreter,
+   * take in a syntax tree (Expr), then evaluate() it,
+   * take that result and convert it to a string,
+   * display the result
+  */
+  void interpret(Expr expression) { 
+    try {
+      Object value = evaluate(expression);
+      System.out.println(stringify(value));
+    } catch (RuntimeError error) {
+      Lox.runtimeError(error);
+    }
+  }
+
+  // handy method to converting an Object to string representation
+  private String stringify(Object object) {
+    if (object == null) return "nil";
+
+    if (object instanceof Double) {
+      String text = object.toString();
+      if (text.endsWith(".0")) {
+        text = text.substring(0, text.length() - 2);
+      }
+      return text;
+    }
+
+    return object.toString();
+  }
+
+
+  /* 7.4 Notes
+   * 
+   * Lox uses Double for all values (even ints)
+   * 
+   */
 
 
 
