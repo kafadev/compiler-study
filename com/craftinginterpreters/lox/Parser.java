@@ -54,8 +54,21 @@ public class Parser {
 
 
   private Expr expression() {
-    return equality();
+    //return equality();
+    return assignment();
   }
+
+  private Stmt declaration() {
+    try {
+      if (match(VAR)) return varDeclaration();
+
+      return statement();
+    } catch (ParseError error) {
+      synchronize();
+      return null;
+    }
+  }
+
 
   /* function to check if we're dealing with a binary expression, 
    * if so, then create a new expr and return it 
@@ -232,6 +245,9 @@ public class Parser {
     if (match(FALSE)) return new Expr.Literal(false);
     if (match(TRUE)) return new Expr.Literal(true);
     if (match(NIL)) return new Expr.Literal(null);
+    if (match(IDENTIFIER)) {
+      return new Expr.Variable(previous());
+    }
 
     if (match(NUMBER, STRING)) {
       return new Expr.Literal(previous().literal);
@@ -264,6 +280,7 @@ public class Parser {
   /* figure out what kind of statement it is, and execute accordingly.   */
   private Stmt statement() {
     if (match(PRINT)) return printStatement();
+    if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
     return expressionStatement();
   }
@@ -274,10 +291,64 @@ public class Parser {
     return new Stmt.Print(value);
   }
 
+  private Stmt varDeclaration() {
+    Token name = consume(IDENTIFIER, "Expect variable name.");
+
+    Expr initializer = null;
+    if (match(EQUAL)) {
+      initializer = expression();
+    }
+
+    consume(SEMICOLON, "Expect ';' after variable declaration.");
+    return new Stmt.Var(name, initializer);
+  }
+
+
   private Stmt expressionStatement() {
     Expr expr = expression();
     consume(SEMICOLON, "Expect ';' after expression.");
     return new Stmt.Expression(expr);
+  }
+
+  // handle a block
+  /* 
+   * 
+   */
+  private List<Stmt> block() {
+    List<Stmt> statements = new ArrayList<>();
+
+    // ensure that the item is properly enclosed AND we're not at the end of our tokens
+    // if so, add the statement
+    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    // get rid of } and error check
+    consume(RIGHT_BRACE, "Expect '}' after block.");
+
+    // return all our collected statements 
+    return statements;
+  }
+
+  /* 8.4: in the case of variable assignment we don't want to evaluate LHS to token,
+   * use this function to abstract away that problem and handle that case
+   */
+  private Expr assignment() {
+    Expr expr = equality();
+
+    if (match(EQUAL)) {
+      Token equals = previous();
+      Expr value = assignment();
+
+      if (expr instanceof Expr.Variable) {
+        Token name = ((Expr.Variable)expr).name;
+        return new Expr.Assign(name, value);
+      }
+
+      error(equals, "Invalid assignment target."); 
+    }
+
+    return expr;
   }
 
 

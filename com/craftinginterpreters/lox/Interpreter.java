@@ -5,6 +5,8 @@ import java.util.List;
 public class Interpreter implements Expr.Visitor<Object> ,
                                     Stmt.Visitor<Void> {
 
+  private Environment environment = new Environment();
+
   /* Create function to visit Literal and get the value directly */
   @Override
   public Object visitLiteralExpr(Expr.Literal expr) {
@@ -30,6 +32,12 @@ public class Interpreter implements Expr.Visitor<Object> ,
 
     // Unreachable.
     return null;
+  }
+
+  // evaluate a variable expressiopn
+  @Override
+  public Object visitVariableExpr(Expr.Variable expr) {
+    return environment.get(expr.name);
   }
 
   // error checker for if operator is put in a mistaken manner
@@ -72,6 +80,28 @@ public class Interpreter implements Expr.Visitor<Object> ,
   
   private void execute(Stmt stmt) {
     stmt.accept(this);
+  }
+
+  // actually execute a block 
+  void executeBlock(List<Stmt> statements,
+                    Environment environment) {
+    Environment previous = this.environment;
+    try {
+      this.environment = environment;
+
+      for (Stmt statement : statements) {
+        execute(statement);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
+
+  /* Visitor paradigm : set up for executing block statements */
+  @Override
+  public Void visitBlockStmt(Stmt.Block stmt) {
+    executeBlock(stmt.statements, new Environment(environment));
+    return null;
   }
 
 
@@ -186,7 +216,19 @@ public class Interpreter implements Expr.Visitor<Object> ,
     // we need to be able to accept a list of Statements now
     try {
       for (Stmt statement : statements) {
-        execute(statement);
+        try {
+          execute(statement);
+        } catch (RuntimeError error) {
+
+          // nifty conversion of statement -> expression
+          if (statement instanceof Stmt.Expression) {
+            Object value = evaluate(((Stmt.Expression) statement).expression);
+            System.out.println(stringify(value));
+          } else {
+            Lox.runtimeError(error);
+          }
+          
+        }
       }
     } catch (RuntimeError error) {
       Lox.runtimeError(error);
@@ -229,8 +271,29 @@ public class Interpreter implements Expr.Visitor<Object> ,
     return null;
   }
 
+  // just like print(), var is also a statement
+  @Override
+  public Void visitVarStmt(Stmt.Var stmt) {
+    Object value = null;
+
+    // i.e. var x = 5;
+    // var x;
+    // statement 1. has an initializer
+    if (stmt.initializer != null) {
+      value = evaluate(stmt.initializer);
+    }
+
+    environment.define(stmt.name.lexeme, value);
+    return null;
+  }
 
 
+  @Override
+  public Object visitAssignExpr(Expr.Assign expr) {
+    Object value = evaluate(expr.value);
+    environment.assign(expr.name, value);
+    return value;
+  }
 
 
 
