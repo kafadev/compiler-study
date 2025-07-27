@@ -1,7 +1,9 @@
 package com.craftinginterpreters.lox;
 
 import com.craftinginterpreters.lox.Expr.Assign;
+import com.craftinginterpreters.lox.Expr.Logical;
 import com.craftinginterpreters.lox.Expr.Variable;
+/* NOTE: After chapter 6, this class is deprecated since printing ASTs is no longer a priority */
 
 /* Section 5.4
  * In 5.3 and earlier Expr.java is created as an interface and abstract class
@@ -86,6 +88,12 @@ class AstPrinter implements Expr.Visitor<String> {
   public String visitVariableExpr(Variable expr) {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'visitVariableExpr'");
+  }
+
+  @Override
+  public String visitLogicalExpr(Logical expr) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'visitLogicalExpr'");
   }
 
 }
